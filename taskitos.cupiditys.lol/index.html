@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taskitos</title>
+    <link rel="stylesheet" href="styles.css?v=74">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.png">
+    <script
+    src="https://js.sentry-cdn.com/8d38ce047555b74bc9ae8c98ff73bb3c.min.js"
+    crossorigin="anonymous"
+    ></script>
+    <script
+        async
+        defer
+        src="https://cdn.jsdelivr.net/gh/altcha-org/altcha/dist_i18n/pt-br.min.js"
+        type="module"
+    >
+    </script>
+    <script
+        async
+        defer
+        src="https://cdn.jsdelivr.net/npm/altcha@latest/dist/altcha.min.js"
+        type="module"
+    ></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1 data-text="Taskitos">Taskitos</h1>
+                <p class="subtitle">para sala do futuro e cmsp!</p>
+            </div>
+        </header>
+
+        <section id="loginSection" class="section">
+            <div class="login-container">
+                <h2>Login</h2>
+                <form id="loginForm" class="login-form">
+                    <div class="input-group">
+                        <label for="studentId">RA</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="studentId" placeholder="RA + dígito + sp | ex: 123456790sp" required>
+                            <button type="button" id="clearStudentId" class="clear-btn hidden">×</button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="password">Senha</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" placeholder="Senha" required>
+                            <button type="button" id="togglePassword" class="toggle-btn">👁</button>
+                            <button type="button" id="clearPassword" class="clear-btn hidden">×</button>
+                        </div>
+                    </div>
+
+                    <!-- Altcha CAPTCHA Widget -->
+                    <div class="input-group">
+                        <altcha-widget 
+                            challengeurl="/api/altcha/challenge"
+                            auto="onfocus"
+                            hidefooter="true"
+                            hidelogo="true"
+                            language="pt-BR"
+                            expire="120000"
+                        >
+                        </altcha-widget>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" id="loginNormal" class="btn btn-secondary">
+                            Atividades Pendentes
+                        </button>
+                        <button type="button" id="loginOverdue" class="btn btn-secondary">
+                            Atividades Expiradas
+                        </button>
+                        <!-- <button type="button" id="loginTests" class="btn btn-secondary">
+                            Provas Pendentes
+                        </button> -->
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <div id="activityModal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>Selecionar Atividades</h2>
+                <button class="close-btn" id="closeActivityModal">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="activity-list">
+                    <div class="select-all">
+                        <label>
+                            <input type="checkbox" id="selectAll"> Selecionar Todas as Atividades
+                        </label>
+                    </div>
+                    <div id="activityItems" class="activity-items">
+                    </div>
+                </div>
+
+                <div class="time-settings">
+                    <h3 id="mainSettingsHeader">Configurações de Tempo de Estudo</h3>
+                    <div id="regularTimeSettings" class="time-inputs">
+                        <div class="input-group">
+                            <label for="minTime">Tempo Mínimo (minutos)</label>
+                            <input type="number" id="minTime" value="1" min="0" max="60">
+                        </div>
+                        <div class="input-group">
+                            <label for="maxTime">Tempo Máximo (minutos)</label>
+                            <input type="number" id="maxTime" value="3" min="1" max="60">
+                        </div>
+                    </div>
+                    
+                    <h3 id="testTimeHeader" style="visibility: hidden; height: 0; margin: 0;">Configurações de Tempo</h3>
+                    <div id="testTimeSettings" class="time-inputs" style="visibility: hidden; height: 0; margin: 0;">
+                        <div class="input-group">
+                            <label for="minTestTime">Tempo Mínimo Prova (minutos)</label>
+                            <input type="number" id="minTestTime" value="30" min="10" max="90">
+                        </div>
+                        <div class="input-group">
+                            <label for="maxTestTime">Tempo Máximo Prova (minutos)</label>
+                            <input type="number" id="maxTestTime" value="45" min="10" max="90">
+                        </div>
+                    </div>
+                    
+                    <h3 id="scoreHeader" style="visibility: hidden; height: 0; margin: 0; margin-top: 20px;">Configurações de Pontuação</h3>
+                    <div id="scoreSettings" class="score-dropdown" style="visibility: hidden; height: 0; margin: 0;">
+                        <div class="input-group">
+                            <label for="scorePreset">Nível de Pontuação</label>
+                            <select id="scorePreset">
+                                <option value="50">50%</option>
+                                <option value="75" selected>75% (±5%)</option>
+                                <option value="85">85% (±5%)</option>
+                                <option value="100">100%</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="startSelected" class="btn btn-secondary">Fazer Lições Selecionadas</button>
+                    <button id="startAllActivities" class="btn btn-secondary">Fazer Lições Todas</button>
+                    <button id="saveDraft" class="btn btn-secondary">Fazer Lições Selecionadas como Rascunho</button>
+                    <button id="submitTests" class="btn btn-secondary" style="display: none;">Enviar Provas Selecionadas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="progressOverlay" class="overlay hidden">
+        <div class="progress-content">
+            <h2>Processando Atividades</h2>
+            <div class="spinner"></div>
+            
+            <div class="progress-info">
+                <div id="currentActivity" class="current-activity">
+                    Preparando atividades...
+                </div>
+                
+                <div class="progress-stats">
+                    <span id="progressCounter">Processando 0 de 0 atividades</span>
+                </div>
+                
+                <div id="progressStatus" class="progress-status">
+                    Por favor, não feche esta página enquanto as atividades estão sendo processadas.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <footer class="footer">
+        Entre no nosso servidor do Discord
+        <br>
+        <a href="https://discord.gg/platformdestroyer">Platform Destroyer - Discord</a>
+        <br>
+        feito por cupiditys
+        <br>
+        "Taskitos" nome por prongsfav
+        <br>
+        Baseado em Doritus
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <!-- <script src="index.js"></script> -->
+     <script>
+        // 数値入力フィールドのmin/max値を強制する関数
+        function enforceMinMax(input) {
+            const min = parseInt(input.getAttribute('min'));
+            const max = parseInt(input.getAttribute('max'));
+            let value = parseInt(input.value);
+            
+            if (isNaN(value)) {
+                input.value = min;
+                return;
+            }
+            
+            if (value < min) {
+                input.value = min;
+            } else if (value > max) {
+                input.value = max;
+            }
+        }
+        
+        // すべての数値入力フィールドにイベントリスナーを追加
+        document.addEventListener('DOMContentLoaded', function() {
+            const numberInputs = document.querySelectorAll('input[type="number"]');
+            
+            numberInputs.forEach(input => {
+                // 入力中の検証（リアルタイム）
+                input.addEventListener('input', function() {
+                    enforceMinMax(this);
+                });
+                
+                // フォーカスが外れた時の検証
+                input.addEventListener('blur', function() {
+                    enforceMinMax(this);
+                });
+                
+                // キーボード入力の検証
+                input.addEventListener('keydown', function(e) {
+                    // 数字、バックスペース、デリート、タブ、エスケープ、エンター、矢印キーのみ許可
+                    const allowedKeys = [8, 9, 27, 13, 46, 37, 38, 39, 40];
+                    const isNumber = (e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105);
+                    
+                    if (!allowedKeys.includes(e.keyCode) && !isNumber && !e.ctrlKey) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+        
+        // index.jsをランダムな数で読み込む
+        const randomNumber = Math.floor(Math.random() * 1000000);
+        const script = document.createElement('script');
+        script.src = `index.js?v=${randomNumber}`;
+        document.head.appendChild(script);
+     </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1b784219b46d493b9d500a89e65be9ed","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
